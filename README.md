@@ -44,3 +44,4 @@ Demo scene contains simple example of usage.
     - On Fail
         - Will be called if player failed event, i.e. time is up or wrong key was pressed (if 'fail on wrong key' enabled)
 3) Create any trigger, action or use script to call QTEManager.startEvent(QTEEvent) method to start your QTE event
+![Event start example](https://github.com/CrissNamon/unityqte/blob/main/event_start.png)
