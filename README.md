@@ -43,3 +43,4 @@ Demo scene contains simple example of usage.
        - Will be called only if all keys were pressed
     - On Fail
         - Will be called if player failed event, i.e. time is up or wrong key was pressed (if 'fail on wrong key' enabled)
+3) Create any trigger, action or use script to call QTEManager.startEvent(QTEEvent) method to start your QTE event
