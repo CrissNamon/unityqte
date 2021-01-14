@@ -5,11 +5,13 @@ Simple QTE system for Unity (Quick time event)
 
 Contains:
 - QTEManager
--- Main script for processing events
+    - Main script for processing events
 - QTEEvent
--- Event class with settings
+    - Event class with settings
 
-How to use:
+Demo scene contains simple example of usage.
+<br>
+<b>How to use:<b>
 1) Attach QTEManager script to any gameobject. Set Slow motion time scale param, QTE ui object, Text component and Image component
 - Slow motion time scale
     - If event time type set to 'Slow', this param will be used as Unity time scale
