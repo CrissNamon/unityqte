@@ -1,7 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.Experimental.Input;
+#endif
 
 public class QTEManager : MonoBehaviour
 {
@@ -16,7 +18,13 @@ public class QTEManager : MonoBehaviour
     private bool isEnded;
     private float currentTime;
     private float smoothTimeUpdate;
-    private List<KeyCode> keys = new List<KeyCode>();
+    private bool rightKeyPressed;
+    #if ENABLE_INPUT_SYSTEM
+        private List<Key> keys = new List<Key>();
+        bool wrongKeyPressed;
+    #else
+        private List<KeyCode> keys = new List<KeyCode>();
+    #endif
 
     protected void Update()
     {
@@ -28,27 +36,69 @@ public class QTEManager : MonoBehaviour
         }
         else
         {
+#if ENABLE_INPUT_SYSTEM
+            wrongKeyPressed = false;
+            rightKeyPressed = false;
+            var keyboard = Keyboard.current;
+#endif
             for (int i = 0; i < eventData.keys.Count; i++)
             {
+#if ENABLE_INPUT_SYSTEM
+                if(keyboard != null)
+                {
+                    if (keyboard[eventData.keys[i]].wasPressedThisFrame)
+                    {
+                        keys.Remove(eventData.keys[i]);
+                    }
+                    if (keyboard[eventData.keys[i]].isPressed)
+                    {
+                        rightKeyPressed = rightKeyPressed || true;
+                    }
+                    if (keyboard[eventData.keys[i]].wasReleasedThisFrame && eventData.pressType == QTEPressType.Simultaneously)
+                    {
+                        keys.Add(eventData.keys[i]);
+                    }
+                }
+#else
                 if (Input.GetKeyDown(eventData.keys[i]))
                 {
                     keys.Remove(eventData.keys[i]);
                 }
+                if(Input.GetKeyUp(eventData.keys[i]) && eventData.pressType == QTEPressType.Simultaneously)
+                {
+                    keys.Add(eventData.keys[i]);
+                }
+#endif
             }
+#if ENABLE_INPUT_SYSTEM
+            if(!rightKeyPressed && keyboard.anyKey.isPressed && eventData.failOnWrongKey)
+            {
+                isFail = true;
+            }
+#endif
         }
     }
 
     public void startEvent(QTEEvent eventScriptable)
     {
         eventData = eventScriptable;
-        if(eventData.onStart != null)
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current == null)
+        {
+            Debug.Log("No keyboard connected. Gamepad input in QTE events is not supported now");
+            return;
+        }
+        keys = new List<Key>(eventData.keys);
+#else
+        keys = new List<KeyCode>(eventData.keys);
+#endif
+        if (eventData.onStart != null)
         {
             eventData.onStart.Invoke();
         }
         isAllButtonsPressed = false;
         isEnded = false;
         isFail = false;
-        keys = new List<KeyCode>(eventData.keys);
         switch (eventScriptable.timeType)
         {
             case QTETimeType.Slow:
@@ -126,6 +176,8 @@ public class QTEManager : MonoBehaviour
 
     protected void OnGUI()
     {
+#if !ENABLE_INPUT_SYSTEM
+        /*
         if (!isEventStarted || eventData == null || isEnded || isFail) return;
         if (Event.current.isKey && Event.current.type == EventType.KeyUp && eventData.pressType == QTEPressType.Simultaneously)
         {
@@ -134,12 +186,14 @@ public class QTEManager : MonoBehaviour
                 keys.Add(Event.current.keyCode);
             }
         }
+        */
         if (Event.current.isKey && Event.current.type == EventType.KeyDown && eventData.failOnWrongKey)
         {
             if (!eventData.keys.Contains(Event.current.keyCode) && Event.current.keyCode!=KeyCode.None) {
                 isFail = true;
             }
-        }
+        }    
+#endif
     }
 
     protected void updateTimer()

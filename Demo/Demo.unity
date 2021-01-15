@@ -940,7 +940,7 @@ PrefabInstance:
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
       propertyPath: keys.Array.size
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
@@ -990,12 +990,12 @@ PrefabInstance:
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
       propertyPath: keys.Array.data[0]
-      value: 113
+      value: 101
       objectReference: {fileID: 0}
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
       propertyPath: keys.Array.data[1]
-      value: 116
+      value: 113
       objectReference: {fileID: 0}
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
@@ -1169,13 +1169,8 @@ PrefabInstance:
       objectReference: {fileID: 1719020617}
     - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
-      propertyPath: keys.Array.data[2]
-      value: 101
-      objectReference: {fileID: 0}
-    - target: {fileID: 5095926077192720537, guid: 340289d9638cb459da17ff233b8d3f35,
-        type: 3}
-      propertyPath: time
-      value: 10
+      propertyPath: failOnWrongKey
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5095926077192720538, guid: 340289d9638cb459da17ff233b8d3f35,
         type: 3}
@@ -1245,11 +1240,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: QTEUI
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800344533232, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6833854800344533239, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
         type: 3}
@@ -1355,56 +1345,6 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Pivot.y
       value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800344533238, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.r
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800344533238, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800344533238, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.b
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854799595130985, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854799595130985, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854799595130985, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800373860818, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.r
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800373860818, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.g
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800373860818, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Color.b
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6833854800373860818, guid: 47a9dffa23a444bdbaaf9b4f0159884d,
-        type: 3}
-      propertyPath: m_Text
-      value: 
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 47a9dffa23a444bdbaaf9b4f0159884d, type: 3}
