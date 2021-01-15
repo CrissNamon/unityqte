@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public enum QTETimeType
 {
@@ -21,9 +22,14 @@ public class QTEEvent : MonoBehaviour
     [Header("Event settings")]
     public List<KeyCode> keys = new List<KeyCode>();
     public QTETimeType timeType;
-    public float time;
+    public float time = 3f;
     public bool failOnWrongKey;
     public QTEPressType pressType;
+    [Header("UI")]
+    public GameObject eventUI;
+    public Text eventText;
+    public Text eventTimerText;
+    public Image eventTimerImage;
     [Header("Event actions")]
     public UnityEvent onStart;
     public UnityEvent onEnd;

@@ -7,10 +7,6 @@ public class QTEManager : MonoBehaviour
 {
     [Header("Configuration")]
     public float slowMotionTimeScale = 0.1f;
-    [Header("UI")]
-    public GameObject eventUI;
-    public Text eventText;
-    public Image eventTime;
 
     [HideInInspector]
     private bool isEventStarted;
@@ -22,7 +18,7 @@ public class QTEManager : MonoBehaviour
     private float smoothTimeUpdate;
     private List<KeyCode> keys = new List<KeyCode>();
 
-    private void Update()
+    protected void Update()
     {
         if (!isEventStarted || eventData == null) return;
         updateTimer();
@@ -64,11 +60,20 @@ public class QTEManager : MonoBehaviour
         }
         currentTime = eventData.time;
         smoothTimeUpdate = currentTime;
-        eventTime.fillAmount = 1;
-        eventText.text = "";
-        eventData.keys.ForEach(key => eventText.text += key+"+");
-        eventText.text = eventText.text.Remove(eventText.text.Length - 1);
-        eventUI.SetActive(true);
+        if (eventData.eventTimerImage != null)
+        {
+            eventData.eventTimerImage.fillAmount = 1;
+        }
+        if (eventData.eventText != null)
+        {
+            eventData.eventText.text = "";
+            eventData.keys.ForEach(key => eventData.eventText.text += key + "+");
+            eventData.eventText.text = eventData.eventText.text.Remove(eventData.eventText.text.Length - 1);
+        }
+        if (eventData.eventUI != null)
+        {
+            eventData.eventUI.SetActive(true);
+        }
         StartCoroutine(countDown());
     }
 
@@ -77,6 +82,10 @@ public class QTEManager : MonoBehaviour
         isEventStarted = true;
         while(currentTime > 0 && isEventStarted && !isEnded)
         {
+            if(eventData.eventTimerText != null)
+            {
+                eventData.eventTimerText.text = currentTime.ToString();
+            }
             currentTime--;
             yield return new WaitForSecondsRealtime(1f);
         }
@@ -87,7 +96,7 @@ public class QTEManager : MonoBehaviour
         }
     }
 
-    private void doFinally()
+    protected void doFinally()
     {
         if (keys.Count == 0)
         {
@@ -96,7 +105,10 @@ public class QTEManager : MonoBehaviour
         isEnded = true;
         isEventStarted = false;
         Time.timeScale = 1f;
-        eventUI.SetActive(false);
+        if (eventData.eventUI != null)
+        {
+            eventData.eventUI.SetActive(false);
+        }
         if (eventData.onEnd != null)
         {
             eventData.onEnd.Invoke();
@@ -112,7 +124,7 @@ public class QTEManager : MonoBehaviour
         eventData = null;
     }
 
-    void OnGUI()
+    protected void OnGUI()
     {
         if (!isEventStarted || eventData == null || isEnded || isFail) return;
         if (Event.current.isKey && Event.current.type == EventType.KeyUp && eventData.pressType == QTEPressType.Simultaneously)
@@ -130,9 +142,12 @@ public class QTEManager : MonoBehaviour
         }
     }
 
-    private void updateTimer()
+    protected void updateTimer()
     {
         smoothTimeUpdate -= Time.unscaledDeltaTime;
-        eventTime.fillAmount = smoothTimeUpdate / eventData.time;
+        if (eventData.eventTimerImage != null)
+        {
+            eventData.eventTimerImage.fillAmount = smoothTimeUpdate / eventData.time;
+        }
     }
 }
