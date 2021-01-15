@@ -1,7 +1,7 @@
 # Unity QTE (Quick time event) system
 Simple QTE system for Unity (Quick time event)
 <br>
-<b>Works only with old input system. Tested on versions: 2018.3.14f1, 2019.4.17f1. Other versions should also work.</b>
+<b>Tested on versions: 2018.3.14f1, 2019.4.17f1. Other versions should also work. If you use old input system you don't need any changes. If you use New Input System your scripting define symbols should contain ENABLE_INPUT_SYSTEM. If you use New Input System version >= 1.1 and Unity 2019.4+ you should import 'Unity2019.4 package'.</b>
 
 Contains:
 - QTEManager
