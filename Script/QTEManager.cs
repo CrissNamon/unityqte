@@ -1,8 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
+#if UNITY_2019_4_OR_NEWER && ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+using DualShockGamepadPS4 = UnityEngine.InputSystem.DualShock.DualShock4GamepadHID;
+#endif
+#if UNITY_2018 && ENABLE_INPUT_SYSTEM
 using UnityEngine.Experimental.Input;
+using UnityEngine.Experimental.Input.Plugins.PS4;
 #endif
 
 public class QTEManager : MonoBehaviour
@@ -16,19 +21,16 @@ public class QTEManager : MonoBehaviour
     private bool isAllButtonsPressed;
     private bool isFail;
     private bool isEnded;
+    private bool isPaused;
+    private bool wrongKeyPressed;
     private float currentTime;
     private float smoothTimeUpdate;
-    private bool rightKeyPressed;
-    #if ENABLE_INPUT_SYSTEM
-        private List<Key> keys = new List<Key>();
-        bool wrongKeyPressed;
-    #else
-        private List<KeyCode> keys = new List<KeyCode>();
-    #endif
+    private float rememberTimeScale;
+    private List<QTEKey> keys = new List<QTEKey>();
 
     protected void Update()
     {
-        if (!isEventStarted || eventData == null) return;
+        if (!isEventStarted || eventData == null || isPaused) return;
         updateTimer();
         if (keys.Count == 0 || isFail)
         {
@@ -36,46 +38,17 @@ public class QTEManager : MonoBehaviour
         }
         else
         {
-#if ENABLE_INPUT_SYSTEM
-            wrongKeyPressed = false;
-            rightKeyPressed = false;
-            var keyboard = Keyboard.current;
-#endif
             for (int i = 0; i < eventData.keys.Count; i++)
             {
-#if ENABLE_INPUT_SYSTEM
-                if(keyboard != null)
+                if(isGamePadConnected())
                 {
-                    if (keyboard[eventData.keys[i]].wasPressedThisFrame)
-                    {
-                        keys.Remove(eventData.keys[i]);
-                    }
-                    if (keyboard[eventData.keys[i]].isPressed)
-                    {
-                        rightKeyPressed = rightKeyPressed || true;
-                    }
-                    if (keyboard[eventData.keys[i]].wasReleasedThisFrame && eventData.pressType == QTEPressType.Simultaneously)
-                    {
-                        keys.Add(eventData.keys[i]);
-                    }
+                    checkGamepadInput(eventData.keys[i]);
                 }
-#else
-                if (Input.GetKeyDown(eventData.keys[i]))
+                else
                 {
-                    keys.Remove(eventData.keys[i]);
+                    checkKeyboardInput(eventData.keys[i]);
                 }
-                if(Input.GetKeyUp(eventData.keys[i]) && eventData.pressType == QTEPressType.Simultaneously)
-                {
-                    keys.Add(eventData.keys[i]);
-                }
-#endif
             }
-#if ENABLE_INPUT_SYSTEM
-            if(!rightKeyPressed && keyboard.anyKey.isPressed && eventData.failOnWrongKey)
-            {
-                isFail = true;
-            }
-#endif
         }
     }
 
@@ -88,9 +61,9 @@ public class QTEManager : MonoBehaviour
             Debug.Log("No keyboard connected. Gamepad input in QTE events is not supported now");
             return;
         }
-        keys = new List<Key>(eventData.keys);
+        keys = new List<QTEKey>(eventData.keys);
 #else
-        keys = new List<KeyCode>(eventData.keys);
+        keys = new List<QTEKey>(eventData.keys);
 #endif
         if (eventData.onStart != null)
         {
@@ -99,6 +72,8 @@ public class QTEManager : MonoBehaviour
         isAllButtonsPressed = false;
         isEnded = false;
         isFail = false;
+        isPaused = false;
+        rememberTimeScale = Time.timeScale;
         switch (eventScriptable.timeType)
         {
             case QTETimeType.Slow:
@@ -110,20 +85,7 @@ public class QTEManager : MonoBehaviour
         }
         currentTime = eventData.time;
         smoothTimeUpdate = currentTime;
-        if (eventData.eventTimerImage != null)
-        {
-            eventData.eventTimerImage.fillAmount = 1;
-        }
-        if (eventData.eventText != null)
-        {
-            eventData.eventText.text = "";
-            eventData.keys.ForEach(key => eventData.eventText.text += key + "+");
-            eventData.eventText.text = eventData.eventText.text.Remove(eventData.eventText.text.Length - 1);
-        }
-        if (eventData.eventUI != null)
-        {
-            eventData.eventUI.SetActive(true);
-        }
+        setupGUI();
         StartCoroutine(countDown());
     }
 
@@ -132,11 +94,12 @@ public class QTEManager : MonoBehaviour
         isEventStarted = true;
         while(currentTime > 0 && isEventStarted && !isEnded)
         {
-            if(eventData.eventTimerText != null)
+            if(eventData.keyboardUI.eventTimerText != null)
             {
-                eventData.eventTimerText.text = currentTime.ToString();
+                eventData.keyboardUI.eventTimerText.text = currentTime.ToString();
             }
             currentTime--;
+            yield return new WaitWhile(() => isPaused);
             yield return new WaitForSecondsRealtime(1f);
         }
         if(!isAllButtonsPressed && !isEnded)
@@ -154,10 +117,11 @@ public class QTEManager : MonoBehaviour
         }
         isEnded = true;
         isEventStarted = false;
-        Time.timeScale = 1f;
-        if (eventData.eventUI != null)
+        Time.timeScale = rememberTimeScale;
+        var ui = getUI();
+        if (ui.eventUI != null)
         {
-            eventData.eventUI.SetActive(false);
+            ui.eventUI.SetActive(false);
         }
         if (eventData.onEnd != null)
         {
@@ -176,32 +140,162 @@ public class QTEManager : MonoBehaviour
 
     protected void OnGUI()
     {
-#if !ENABLE_INPUT_SYSTEM
-        /*
-        if (!isEventStarted || eventData == null || isEnded || isFail) return;
-        if (Event.current.isKey && Event.current.type == EventType.KeyUp && eventData.pressType == QTEPressType.Simultaneously)
+        if (eventData == null || isEnded) return;
+        if (Event.current.isKey && Event.current.type == EventType.KeyDown && eventData.failOnWrongKey && !Event.current.keyCode.ToString().Equals("None"))
         {
-            if (eventData.keys.Contains(Event.current.keyCode))
+            wrongKeyPressed = true;
+            if (isGamePadConnected())
             {
-                keys.Add(Event.current.keyCode);
+                eventData.keys.ForEach(key => wrongKeyPressed = wrongKeyPressed && (!key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString()) || !key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString())));
             }
+            else
+            {
+                eventData.keys.ForEach(key => wrongKeyPressed = wrongKeyPressed && !key.keyboardKey.ToString().Equals(Event.current.keyCode.ToString()));
+            }            
+            
+            isFail = wrongKeyPressed;
         }
-        */
-        if (Event.current.isKey && Event.current.type == EventType.KeyDown && eventData.failOnWrongKey)
-        {
-            if (!eventData.keys.Contains(Event.current.keyCode) && Event.current.keyCode!=KeyCode.None) {
-                isFail = true;
-            }
-        }    
-#endif
     }
 
     protected void updateTimer()
     {
         smoothTimeUpdate -= Time.unscaledDeltaTime;
-        if (eventData.eventTimerImage != null)
+        var ui = getUI();
+        if (ui.eventTimerImage != null)
         {
-            eventData.eventTimerImage.fillAmount = smoothTimeUpdate / eventData.time;
+            ui.eventTimerImage.fillAmount = smoothTimeUpdate / eventData.time;
         }
+    }
+
+    public void pause()
+    {
+        isPaused = true;
+    }
+
+    public void play()
+    {
+        isPaused = false;
+    }
+#if !ENABLE_INPUT_SYSTEM
+    private bool isGamePadConnected()
+    {
+        string[] temp = Input.GetJoystickNames();
+        bool result = false;
+        if (temp.Length > 0)
+        {
+            for (int i = 0; i < temp.Length; ++i)
+            {
+                result = result || !string.IsNullOrEmpty(temp[i]);
+            }
+        }
+        return result;
+    }
+
+    public void checkKeyboardInput(QTEKey key)
+    {
+        if (Input.GetKeyDown(key.keyboardKey))
+        {
+            keys.Remove(key);
+        }
+        if (Input.GetKeyUp(key.keyboardKey) && eventData.pressType == QTEPressType.Simultaneously)
+        {
+            keys.Add(key);
+        }
+    }
+
+    public void checkGamepadInput(QTEKey key)
+    {
+        if (Input.GetKeyDown(key.gamepadXBOXKey) || Input.GetKeyDown(key.gamepadDualShockKey))
+        {
+            keys.Remove(key);
+        }
+        if ((Input.GetKeyUp(key.gamepadXBOXKey) || Input.GetKeyUp(key.gamepadDualShockKey)) && eventData.pressType == QTEPressType.Simultaneously)
+        {
+            keys.Add(key);
+        }
+    }
+#else
+    public bool isGamePadConnected()
+    {
+        return Gamepad.current != null;
+    }
+
+    public bool isXBOXGamePad()
+    {
+        return DualShockGamepadPS4.current == null;
+    }
+
+    public void checkKeyboardInput(QTEKey key)
+    {
+        var inputType = Keyboard.current;
+        if (inputType != null)
+        {
+            if (inputType[key.keyboardKey].wasPressedThisFrame)
+            {
+                keys.Remove(key);
+            }
+            if (inputType[key.keyboardKey].wasReleasedThisFrame && eventData.pressType == QTEPressType.Simultaneously)
+            {
+                keys.Add(key);
+            }
+        }
+    }
+
+    public void checkGamepadInput(QTEKey key)
+    {
+        var inputType = Gamepad.current;
+        if (inputType != null)
+        {
+            if (inputType[key.gamepadXBOXKey].wasPressedThisFrame || inputType[key.gamepadDualShockKey].wasPressedThisFrame)
+            {
+                keys.Remove(key);
+            }
+            if ((inputType[key.gamepadXBOXKey].wasReleasedThisFrame || inputType[key.gamepadDualShockKey].wasReleasedThisFrame) && eventData.pressType == QTEPressType.Simultaneously)
+            {
+                keys.Add(key);
+            }
+        }
+    }
+#endif
+
+    protected void setupGUI()
+    {
+        var ui = getUI();
+        
+        if (ui.eventTimerImage != null)
+        {
+            ui.eventTimerImage.fillAmount = 1;
+        }
+        if (ui.eventText != null)
+        {
+            ui.eventText.text = "";
+            eventData.keys.ForEach(key => ui.eventText.text += key.keyboardKey + "+");
+            eventData.keyboardUI.eventText.text = ui.eventText.text.Remove(ui.eventText.text.Length - 1);
+        }
+        if (ui.eventUI != null)
+        {
+            ui.eventUI.SetActive(true);
+        }
+    }
+
+    protected QTEUI getUI()
+    {
+        var ui = eventData.keyboardUI;
+        if (isGamePadConnected())
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (isXBOXGamePad())
+            {
+                ui = eventData.gamepadXBOXUI;
+            }
+            else
+            {
+                ui = eventData.gamepadDualShockUI;
+            }
+#else
+            ui = eventData.gamepadUI;
+#endif
+        }
+        return ui;
     }
 }
