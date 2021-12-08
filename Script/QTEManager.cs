@@ -1,10 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 #if UNITY_2019_4_OR_NEWER && ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using DualShockGamepadPS4 = UnityEngine.InputSystem.DualShock.DualShock4GamepadHID;
 #endif
+
 #if UNITY_2018 && ENABLE_INPUT_SYSTEM
 using UnityEngine.Experimental.Input;
 using UnityEngine.Experimental.Input.Plugins.PS4;
@@ -54,17 +56,15 @@ public class QTEManager : MonoBehaviour
 
     public void startEvent(QTEEvent eventScriptable)
     {
-        eventData = eventScriptable;
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current == null)
         {
             Debug.Log("No keyboard connected. Gamepad input in QTE events is not supported now");
             return;
         }
-        keys = new List<QTEKey>(eventData.keys);
-#else
-        keys = new List<QTEKey>(eventData.keys);
 #endif
+        eventData = eventScriptable;
+        keys = new List<QTEKey>(eventData.keys);
         if (eventData.onStart != null)
         {
             eventData.onStart.Invoke();
@@ -141,16 +141,24 @@ public class QTEManager : MonoBehaviour
     protected void OnGUI()
     {
         if (eventData == null || isEnded) return;
-        if (Event.current.isKey && Event.current.type == EventType.KeyDown && eventData.failOnWrongKey && !Event.current.keyCode.ToString().Equals("None"))
+        if (Event.current.isKey 
+            && Event.current.type == EventType.KeyDown 
+            && eventData.failOnWrongKey 
+            && !Event.current.keyCode.ToString().Equals("None"))
         {
             wrongKeyPressed = true;
             if (isGamePadConnected())
             {
-                eventData.keys.ForEach(key => wrongKeyPressed = wrongKeyPressed && (!key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString()) || !key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString())));
+                eventData.keys.ForEach(key => 
+                    wrongKeyPressed = wrongKeyPressed 
+                    && (!key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString()) 
+                        || !key.gamepadDualShockKey.ToString().Equals(Event.current.keyCode.ToString())));
             }
             else
             {
-                eventData.keys.ForEach(key => wrongKeyPressed = wrongKeyPressed && !key.keyboardKey.ToString().Equals(Event.current.keyCode.ToString()));
+                eventData.keys.ForEach(key => 
+                    wrongKeyPressed = wrongKeyPressed 
+                    && !key.keyboardKey.ToString().Equals(Event.current.keyCode.ToString()));
             }            
             
             isFail = wrongKeyPressed;
@@ -176,6 +184,7 @@ public class QTEManager : MonoBehaviour
     {
         isPaused = false;
     }
+
 #if !ENABLE_INPUT_SYSTEM
     private bool isGamePadConnected()
     {
@@ -209,12 +218,16 @@ public class QTEManager : MonoBehaviour
         {
             keys.Remove(key);
         }
-        if ((Input.GetKeyUp(key.gamepadXBOXKey) || Input.GetKeyUp(key.gamepadDualShockKey)) && eventData.pressType == QTEPressType.Simultaneously)
+        if ((Input.GetKeyUp(key.gamepadXBOXKey) 
+            || Input.GetKeyUp(key.gamepadDualShockKey)) 
+            && eventData.pressType == QTEPressType.Simultaneously)
         {
             keys.Add(key);
         }
     }
+
 #else
+
     public bool isGamePadConnected()
     {
         return Gamepad.current != null;
@@ -234,7 +247,8 @@ public class QTEManager : MonoBehaviour
             {
                 keys.Remove(key);
             }
-            if (inputType[key.keyboardKey].wasReleasedThisFrame && eventData.pressType == QTEPressType.Simultaneously)
+            if (inputType[key.keyboardKey].wasReleasedThisFrame 
+                && eventData.pressType == QTEPressType.Simultaneously)
             {
                 keys.Add(key);
             }
@@ -246,16 +260,20 @@ public class QTEManager : MonoBehaviour
         var inputType = Gamepad.current;
         if (inputType != null)
         {
-            if (inputType[key.gamepadXBOXKey].wasPressedThisFrame || inputType[key.gamepadDualShockKey].wasPressedThisFrame)
+            if (inputType[key.gamepadXBOXKey].wasPressedThisFrame 
+                || inputType[key.gamepadDualShockKey].wasPressedThisFrame)
             {
                 keys.Remove(key);
             }
-            if ((inputType[key.gamepadXBOXKey].wasReleasedThisFrame || inputType[key.gamepadDualShockKey].wasReleasedThisFrame) && eventData.pressType == QTEPressType.Simultaneously)
+            if ((inputType[key.gamepadXBOXKey].wasReleasedThisFrame 
+                || inputType[key.gamepadDualShockKey].wasReleasedThisFrame) 
+                && eventData.pressType == QTEPressType.Simultaneously)
             {
                 keys.Add(key);
             }
         }
     }
+
 #endif
 
     protected void setupGUI()
